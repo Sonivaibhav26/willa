@@ -25,24 +25,47 @@ const countries = ['japan', 'barmuda'];
 //   .sink(Kafka.producer({ topic: 'log' }));
 
 // pipeline.source(Stream.consumer({ name: 'process' }))
-// .flow((data, err, next) => {
-//   let num = parseInt(data.num);
-//   Object.assign(data, { num: num + 1 , from : countries[Math.floor(Math.random() * country.length)]});
-//   Object.assign(data, { to : countries[Math.floor(Math.random() * country.length)]});
-//   // throw new Error('Kaka punjabi');
-//   next(data, err);
-// })
-// .flow(Batch.reduce({ number: 5, timeout: 30000, groupBy: "from", attributes: ["num", "to"]}, 
-//   (aggtr ,data) => {
+//   .flow((data, err, next) => {
 //     let num = parseInt(data.num);
-//     aggtr.number += num;
-//     return aggtr;
-// }, { number:0}))
-// .sink((data, err, next) => {
-//   console.log("\n\n Reduced: \n", JSON.stringify(data, null, 3));
-//   next(data, err);
-// });
+//     Object.assign(data, { num: num + 1, from: countries[Math.floor(Math.random() * country.length)] });
+//     Object.assign(data, { to: countries[Math.floor(Math.random() * country.length)] });
+//     // throw new Error('Kaka punjabi');
+//     next(data, err);
+//   })
+//   .flow(Batch.reduce({ timeout: 5000, groupBy: "from", type: "leveldb", path: "/Users/vaibhav/workspace/xbl/willa", attributes: ["num", "to"] },
+//     (aggtr, data) => {
+//       let num = parseInt(data.num);
+//       aggtr.number += num;
+//       return aggtr;
+//     }, { number: 0 }))
+//   .sink((data, err, next) => {
+//     console.log("\n\n Reduced: \n", JSON.stringify(data, null, 3));
+//     next(data, err);
+//   });
 
+
+// pipeline.source(Stream.consumer({ name: 'process-mapper' }))
+//   .flow((data, err, next) => {
+//     let num = parseInt(data.num);
+//     Object.assign(data, { num: num + 1, from: country[Math.floor(Math.random() * country.length)] });
+//     Object.assign(data, { to: country[Math.floor(Math.random() * country.length)] });
+//     // throw new Error('Kaka punjabi');
+//     next(data, err);
+//   })
+//   .flow(Batch.map({ number: 5, timeout: 30000, groupBy: ["to", "from"], attributes: ["num", "from"], type: "leveldb" },
+//     (data) => {
+//       return { "origination": data.from, "volume": data.num };
+//     })
+//   )
+//   .sink(async (data, err, next) => {
+//     console.log("\n\n Mapped: \n", JSON.stringify(data, null, 3));
+//     data.data.forEach(async element => {
+//       for await (const i of element.argdata) {
+//         console.log(i)
+//       }
+//     });
+//     next(data, err);
+//   });
 
 pipeline.source(Stream.consumer({ name: 'process-mapper' }))
   .flow((data, err, next) => {
@@ -52,7 +75,7 @@ pipeline.source(Stream.consumer({ name: 'process-mapper' }))
     // throw new Error('Kaka punjabi');
     next(data, err);
   })
-  .flow(Batch.map({ number: 5, timeout: 30000, groupBy: ["to", "from"], attributes: ["num", "from"], type: "leveldb" },
+  .flow(Batch.map({ number: 5, timeout: 30000, groupBy: ["to", "from"], attributes: ["num", "from" , "_timestamp"], timestamp : "time" },
     (data) => {
       return { "origination": data.from, "volume": data.num };
     })
@@ -66,6 +89,7 @@ pipeline.source(Stream.consumer({ name: 'process-mapper' }))
     });
     next(data, err);
   });
+
 
 // pipeline.sourceCommitable(Kafka.consumer({ topic: 'log' }))
 //   .flow((data, err, next) => {
